@@ -1,6 +1,6 @@
 # autoresearch
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19771898.svg)](https://doi.org/10.5281/zenodo.19771898)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19772195.svg)](https://doi.org/10.5281/zenodo.19772195)
 [![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 ## Citation
@@ -12,13 +12,13 @@ If you use this software, please cite it as:
   title   = {autoresearch: Autonomous Research Loop with a Local LLM Critic (v1.0)},
   author  = {Brom, Pedro Carvalho},
   year    = {2026},
-  doi     = {10.5281/zenodo.19771898},
-  url     = {https://doi.org/10.5281/zenodo.19771898},
+  doi     = {10.5281/zenodo.19772195},
+  url     = {https://doi.org/10.5281/zenodo.19772195},
   license = {CC-BY-NC-SA-4.0}
 }
 ```
 
-The Concept DOI [`10.5281/zenodo.19771897`](https://doi.org/10.5281/zenodo.19771897)
+The Concept DOI [`10.5281/zenodo.19772194`](https://doi.org/10.5281/zenodo.19772194)
 always resolves to the latest version.
 
 ---
