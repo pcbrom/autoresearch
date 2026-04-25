@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+CLAUDE.md
+
+# OS
+.DS_Store
+
+# Zenodo publish helper (kept local, not shipped)
+zenodo_publish.sh
+
+# autoresearch runtime artifacts (per-project, not shipped)
+results.tsv
+run.log
+next_idea.json
+STATE.md
+AUDIT_LOG.md
+AUDIT_LOG.json
+.autoresearch/

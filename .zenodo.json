@@ -1,0 +1,34 @@
+{
+    "title": "autoresearch: Autonomous Research Loop with a Local LLM Critic (v1.0)",
+    "description": "Generalization of the karpathy/autoresearch pattern as a small Python package: any optimization problem expressible as a single metric, a fixed time budget, a single mutable file and a git branch can be optimized iteratively by an LLM critic that proposes one structured change at a time. The critic runs locally via Ollama (any OpenAI-compatible endpoint also works) and emits JSON-Schema-constrained proposals (thought_process, alternatives_considered, hypothesis, expected_delta, justification, code_pseudocode, risk_level). The harness commits, runs the experiment under a hard timeout, classifies the result as keep/discard/crash against the running best, advances or resets the git branch, and consolidates a navigable audit log. Ships three working examples (TSP heuristic search, XGBoost hyperparameter tuning, multi-metric scalarization) with sample runs.",
+    "upload_type": "software",
+    "creators": [
+        {
+            "name": "Brom, Pedro Carvalho",
+            "affiliation": "Department of Mathematics, Federal Institute of Brasilia",
+            "orcid": "0000-0002-1288-7695"
+        }
+    ],
+    "keywords": [
+        "autonomous research",
+        "LLM critic",
+        "Ollama",
+        "Gemma",
+        "experiment loop",
+        "hyperparameter search",
+        "iterative optimization",
+        "JSON Schema",
+        "git-based experimentation",
+        "structured chain-of-thought"
+    ],
+    "license": "CC-BY-NC-SA-4.0",
+    "related_identifiers": [
+        {
+            "identifier": "https://github.com/karpathy/autoresearch",
+            "relation": "isDerivedFrom",
+            "resource_type": "software",
+            "scheme": "url"
+        }
+    ],
+    "references": []
+}

@@ -1,0 +1,33 @@
+objective: "minimize tour length on 50-city random TSP via heuristic search"
+metric_name: tour_length
+metric_regex: '^tour_length:\s+([\d.eE+-]+)'
+lower_is_better: true
+
+time_budget_s: 10
+hard_timeout_s: 30
+
+mutable_file: solution.py
+readonly_files:
+  - prepare.py
+  - evaluate.py
+runner: "python3 solution.py"
+
+branch_prefix: tsp
+results_tsv_columns: [commit, tour_length, wall_s, status, description]
+
+resource_metric_regex: '^wall_s:\s+([\d.]+)'
+resource_metric_transform: identity
+
+gemma_critic:
+  enabled: true
+  model: gemma3n:e2b
+  when: always
+  thinking: true
+  max_vram_gb: 8
+  context_last_n: 10
+  ollama_url: http://localhost:11434/v1
+
+state:
+  enabled: true
+  throttle_seconds: 30
+  rebuild_every_n_iter: 3

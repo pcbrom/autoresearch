@@ -1,0 +1,48 @@
+# problem.yaml — canonical autoresearch problem definition.
+# Replace placeholders <...> and remove irrelevant comments.
+
+# Identification
+objective: "<short description of what to minimize/maximize>"
+metric_name: <metric_name>                  # e.g. val_bpb, rmse, fitness
+metric_regex: '^<metric_name>:\s+([\d.eE+-]+)'  # extracted from runner stdout
+lower_is_better: true                       # false to maximize
+
+# Time budget and timeout
+time_budget_s: 300                          # informational (runner enforces)
+hard_timeout_s: 600                         # SIGKILL if exceeded
+
+# Files
+mutable_file: <solution.py>                 # the only file the agent edits
+readonly_files:                             # contract files
+  - <prepare.py>
+  - <evaluate.py>
+runner: "<command that runs the experiment>"
+
+# Git
+branch_prefix: <prefix>                     # e.g. autoresearch, hpsearch, tsp
+results_tsv_columns:
+  - commit
+  - <metric_name>
+  - <resource_metric>
+  - status
+  - description
+
+# Optional secondary resource (VRAM, RAM, wall time)
+resource_metric_regex: '^peak_vram_mb:\s+([\d.]+)'
+resource_metric_transform: divide_by_1024   # MB -> GB; or: identity, divide_by_1000
+
+# Critic (Ollama-backed Gemma)
+gemma_critic:
+  enabled: true
+  model: gemma3n:e2b                        # or gemma3:27b, etc.
+  when: always                              # always (coexists) | downtime (between runs)
+  thinking: true                            # CoT-enriched prompt + best-effort thinking
+  max_vram_gb: 8
+  context_last_n: 10                        # tail rows of TSV passed to the critic
+  ollama_url: http://localhost:11434/v1
+
+# State snapshot
+state:
+  enabled: true
+  throttle_seconds: 300
+  rebuild_every_n_iter: 5

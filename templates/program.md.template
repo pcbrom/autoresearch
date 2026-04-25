@@ -1,0 +1,51 @@
+# {{ objective }}
+
+Autonomous research loop. Replace `{{ ... }}` placeholders via `autoresearch init`.
+
+## Setup
+
+1. Dedicated branch: `git checkout -b {{ branch_prefix }}/<tag>` (done by `autoresearch init`).
+2. Verify `{{ mutable_file }}` runs the baseline without error: `{{ runner }}`.
+3. `results.tsv` already initialized.
+
+## Experimentation
+
+You edit **only** `{{ mutable_file }}`. Read-only files:
+{% for f in readonly_files %}- `{{ f }}`
+{% endfor %}
+
+**Single metric**: `{{ metric_name }}` ({% if lower_is_better %}lower{% else %}higher{% endif %} is better).
+Time budget: {{ time_budget_s }}s. Hard timeout: {{ hard_timeout_s }}s.
+
+**Allowed**: any change to `{{ mutable_file }}` that (a) keeps compatibility with the read-only contracts,
+(b) does not crash, (c) finishes within `hard_timeout_s`.
+
+**Forbidden**: editing read-only files, adding new dependencies, changing the metric definition.
+
+**Simplicity**: all else equal, simpler is better. A small win that adds ugly complexity is not worth it.
+
+## Logging
+
+`results.tsv` (tab-separated, NEVER commit):
+```
+{% for c in results_tsv_columns %}{{ c }}{{ "\t" if not loop.last }}{% endfor %}
+```
+
+Valid statuses: `keep`, `discard`, `crash`.
+
+## The loop
+
+Managed by `autoresearch loop`. Each iteration:
+
+1. Reads `next_idea.json` (proposed by the Gemma critic in the previous iteration).
+2. The agent (Claude / Codex / human) edits `{{ mutable_file }}` applying the idea.
+3. `autoresearch run`: commits, runs `{{ runner }}` with `timeout {{ hard_timeout_s }}s`, classifies.
+4. Result appended to `results.tsv`. Branch advances on KEEP, resets on DISCARD/CRASH.
+5. Critic proposes the next `next_idea.json`.
+
+NEVER STOP until SIGINT/SIGTERM. Heartbeat in `~/.cache/autoresearch/loop.heartbeat`.
+
+## Crashes
+
+`hard_timeout_s` SIGKILLs the runner. Status = `crash` and the branch is reset. If the same idea
+crashes 3+ times consecutively, the critic is steered toward a more radical change.

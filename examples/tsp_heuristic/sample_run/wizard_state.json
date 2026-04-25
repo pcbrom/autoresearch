@@ -1,0 +1,70 @@
+{
+  "steps": {
+    "repo_git": {
+      "status": "ok",
+      "git_dir": ".git",
+      "current_branch": "tsp/clean",
+      "step": "repo_git",
+      "ts": "2026-04-25T16:43:52"
+    },
+    "tools_present": {
+      "status": "ok",
+      "found": {
+        "git": "/usr/bin/git",
+        "python3": "/usr/bin/python3",
+        "ollama": "/usr/local/bin/ollama"
+      },
+      "optional": {
+        "uv": null,
+        "nvidia-smi": "/usr/bin/nvidia-smi"
+      },
+      "step": "tools_present",
+      "ts": "2026-04-25T16:43:52"
+    },
+    "problem_yaml": {
+      "status": "ok",
+      "problem_path": "<project_dir>/problem.yaml",
+      "objective": "minimize tour length on 50-city random TSP via heuristic search",
+      "metric": "tour_length",
+      "step": "problem_yaml",
+      "ts": "2026-04-25T16:43:52"
+    },
+    "ollama_model": {
+      "status": "ok",
+      "model": "gemma3n:e2b",
+      "step": "ollama_model",
+      "ts": "2026-04-25T16:43:54"
+    },
+    "baseline_smoke": {
+      "status": "ok",
+      "metric_value": "25.251112",
+      "rc": 0,
+      "step": "baseline_smoke",
+      "ts": "2026-04-25T16:43:54"
+    },
+    "critic_dry_run": {
+      "status": "ok",
+      "sample_idea": "Applying a 2-opt local search routine to the randomly generated tour will yield a shorter tour lengt",
+      "step": "critic_dry_run",
+      "ts": "2026-04-25T16:44:03"
+    },
+    "cleanup_check": {
+      "status": "ok",
+      "ollama_runners": [
+        "357104 /usr/local/bin/ollama runner --ollama-engine --model <ollama-model-blob> --port 43677"
+      ],
+      "advice": "the loop rotates run.log into .autoresearch/logs/ each iteration",
+      "log_path": "<project_dir>/run.log",
+      "rotation_dir": "<project_dir>/.autoresearch/logs",
+      "step": "cleanup_check",
+      "ts": "2026-04-25T16:44:03"
+    },
+    "confirm_loop": {
+      "status": "ok",
+      "confirmed_at": "2026-04-25T16:44:03-03:00",
+      "step": "confirm_loop",
+      "ts": "2026-04-25T16:44:03"
+    }
+  },
+  "started_at": 1777146232.5974987
+}
