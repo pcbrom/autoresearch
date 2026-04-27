@@ -97,6 +97,53 @@ autoresearch wizard step confirm_loop
 autoresearch loop
 ```
 
+## Driving the loop with AI coding agents
+
+The agent harness in [How it works](#how-it-works) is intentionally generic:
+any tool that can edit files in the project directory and run shell commands
+can drive the loop. This makes Claude Code, OpenAI Codex, and OpenCode
+plug-and-play. Point any of them at this repository and they will install,
+scaffold and iterate.
+
+Three things the coding agent does per iteration:
+
+1. `autoresearch run` (commits, executes, classifies)
+2. `autoresearch critic` (writes `next_idea.json`)
+3. Read `next_idea.json` and edit `solution.py`
+
+`autoresearch loop` automates steps 1 and 2 and pauses at the `noop` state
+until a new edit has been applied. The agent only needs to handle step 3.
+
+### Claude Code
+
+```bash
+claude
+> Install autoresearch from https://github.com/pcbrom/autoresearch and set up
+  the TSP example. Then drive the loop, applying each next_idea.json suggestion
+  to solution.py until I stop you.
+```
+
+### OpenAI Codex (CLI)
+
+```bash
+codex "clone https://github.com/pcbrom/autoresearch, install it, scaffold the
+TSP example, and drive the autoresearch loop by editing solution.py with each
+next_idea.json suggestion"
+```
+
+### OpenCode
+
+```bash
+opencode
+> Read https://github.com/pcbrom/autoresearch/blob/master/README.md, set up
+  the TSP example, and drive the autoresearch loop end-to-end.
+```
+
+All three follow the same pattern: install the package, scaffold a project
+from one of the examples, validate the 9 wizard preconditions, then iterate by
+editing `solution.py` based on `next_idea.json` written by the critic. No
+manual CLI orchestration is required.
+
 ## How it works
 
 ```
