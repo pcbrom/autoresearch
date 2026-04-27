@@ -152,7 +152,7 @@ manual CLI orchestration is required.
 agent edits solution.py       autoresearch run ────▶ results.tsv
         ▲                                      │
         │                                      ▼
-        └── reads next_idea.json ←── autoresearch critic (Ollama)
+        └── reads next_idea.json ◀──── autoresearch critic (Ollama)
 ```
 
 Each iteration:
