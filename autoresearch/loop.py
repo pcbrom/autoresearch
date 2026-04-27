@@ -53,7 +53,7 @@ def run(args: argparse.Namespace) -> None:
         )
 
     gemma_enabled = bool(get_dotted(problem, "gemma_critic.enabled", False))
-    gemma_model = get_dotted(problem, "gemma_critic.model", "gemma3n:e2b")
+    gemma_model = get_dotted(problem, "gemma_critic.model", "gemma4:e2b")
     state_enabled = bool(get_dotted(problem, "state.enabled", False))
     state_every = int(get_dotted(problem, "state.rebuild_every_n_iter", 5))
     metric = problem["metric_name"]

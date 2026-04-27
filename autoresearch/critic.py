@@ -219,7 +219,7 @@ def run(args: argparse.Namespace) -> None:
     cfg = problem.get("gemma_critic", {})
     if not cfg.get("enabled", False):
         sys.exit("gemma_critic.enabled=false in problem.yaml")
-    model = cfg.get("model", "gemma3n:e2b")
+    model = cfg.get("model", "gemma4:e2b")
     when = cfg.get("when", "always")
     base_url = cfg.get("ollama_url", "http://localhost:11434/v1")
     n_history = int(cfg.get("context_last_n", 10))

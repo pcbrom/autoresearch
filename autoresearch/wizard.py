@@ -130,7 +130,7 @@ def step_ollama_model() -> dict:
         return {"status": "blocked", "reason": "problem_yaml step failed first"}
     if not prob.get("gemma_critic", {}).get("enabled", False):
         return {"status": "skip", "reason": "gemma_critic.enabled=false"}
-    model = prob["gemma_critic"].get("model", "gemma3n:e2b")
+    model = prob["gemma_critic"].get("model", "gemma4:e2b")
     if not _which("ollama"):
         return {"status": "fail", "reason": "ollama binary missing"}
     rc, out, _ = _run(["ollama", "list"], timeout=10)

@@ -36,6 +36,10 @@ Codex, or any tool with file-edit capabilities) reads the proposal, applies it
 to the mutable file, and the loop runs the experiment, classifies it as
 `keep` / `discard` / `crash`, and advances or resets the git branch.
 
+![Convergence on the three shipped examples](docs/convergence.png)
+
+*Convergence on the three shipped examples (TSP heuristic, XGBoost tuning, multi-metric scalarization). Green markers = kept proposals; red = discarded; blue line = best-so-far trajectory. Annotations report baseline, best, percent improvement and kept count. Data extracted directly from each `examples/*/sample_run/results.tsv`.*
+
 ## Why
 
 The original `karpathy/autoresearch` is a great pattern but tied to a single
@@ -61,7 +65,7 @@ pip install pyyaml openai
 
 # Pull any Ollama-served model that honors JSON Schema responses; the choice
 # is set via `gemma_critic.model` in problem.yaml. Examples:
-ollama pull <model>          # e.g. gemma3n:e2b, gemma3:12b, gemma3:27b, qwen2.5:7b
+ollama pull <model>          # e.g. gemma4:e2b, gemma3:12b, gemma3:27b, qwen2.5:7b
 ```
 
 Optional but recommended for the runtime garbage collector:
@@ -184,7 +188,7 @@ reliably with explicit Chain-of-Thought.
 ```yaml
 gemma_critic:
   enabled: true
-  model: gemma3n:e2b           # default — change to any Ollama-served model
+  model: gemma4:e2b           # default — change to any Ollama-served model
   when: always                 # always (coexists) | downtime (free VRAM between runs)
   thinking: true               # CoT-enriched prompt + best-effort thinking flag
   max_vram_gb: 8
@@ -200,7 +204,7 @@ adjust the YAML:
 
 | Backend | `model` | `ollama_url` (rename of `base_url`) | Notes |
 |---------|---------|--------------------------------------|-------|
-| Ollama (default)      | `gemma3n:e2b`, `gemma3:12b`, `gemma3:27b`, `qwen2.5:7b`, ... | `http://localhost:11434/v1` | Pull with `ollama pull <model>` |
+| Ollama (default)      | `gemma4:e2b`, `gemma3:12b`, `gemma3:27b`, `qwen2.5:7b`, ... | `http://localhost:11434/v1` | Pull with `ollama pull <model>` |
 | vLLM serve            | `google/gemma-3-27b-it`, etc.                                | `http://localhost:8000/v1`   | `--reasoning-parser gemma3` exposes `message.reasoning` |
 | OpenAI API            | `gpt-4o-mini`, `gpt-5`, ...                                  | `https://api.openai.com/v1`  | Set `OPENAI_API_KEY` env var (override `api_key="ollama"` in `critic.py`) |
 | Anthropic via proxy   | `claude-opus-4-7` (via `litellm` / `openrouter`)             | `http://localhost:<proxy>/v1`| Any OpenAI-compat proxy |

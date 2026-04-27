@@ -38,10 +38,10 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama serve            # foreground; or use systemctl on Linux
 
 # 2.3 pull the default critic model (~7 GB download, ~7 GB VRAM at runtime)
-ollama pull gemma3n:e2b
+ollama pull gemma4:e2b
 
 # 2.4 sanity check
-ollama list             # should show gemma3n:e2b
+ollama list             # should show gemma4:e2b
 curl -s http://localhost:11434/api/version
 ```
 

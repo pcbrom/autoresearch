@@ -20,7 +20,7 @@ resource_metric_transform: identity
 
 gemma_critic:
   enabled: true
-  model: gemma3n:e2b
+  model: gemma4:e2b
   when: always
   thinking: true
   max_vram_gb: 8
