@@ -21,7 +21,7 @@
         "git-based experimentation",
         "structured chain-of-thought"
     ],
-    "license": "CC-BY-NC-SA-4.0",
+    "license": "MIT",
     "related_identifiers": [
         {
             "identifier": "https://github.com/karpathy/autoresearch",

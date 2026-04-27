@@ -1,7 +1,7 @@
 # autoresearch
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19772195.svg)](https://doi.org/10.5281/zenodo.19772195)
-[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Citation
 
@@ -14,7 +14,7 @@ If you use this software, please cite it as:
   year    = {2026},
   doi     = {10.5281/zenodo.19772195},
   url     = {https://doi.org/10.5281/zenodo.19772195},
-  license = {CC-BY-NC-SA-4.0}
+  license = {MIT}
 }
 ```
 
@@ -245,6 +245,4 @@ That is the whole contract.
 
 ## License
 
-Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
-(CC BY-NC-SA 4.0). See [LICENSE](LICENSE). Commercial use requires a separate
-written agreement: contact pcbrom@gmail.com.
+MIT License. See [LICENSE](LICENSE).
