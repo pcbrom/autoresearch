@@ -30,10 +30,13 @@ git tracking can be optimized overnight by an LLM critic that proposes one
 iterative change at a time.
 
 The critic runs locally via [Ollama](https://ollama.com) (Gemma family by
-default) and emits structured JSON (`thought_process`, alternatives,
-`hypothesis`, `code_pseudocode`, `risk_level`). The agent harness (Claude,
-Codex, or any tool with file-edit capabilities) reads the proposal, applies it
-to the mutable file, and the loop runs the experiment, classifies it as
+default) or any OpenAI-compatible endpoint such as
+[OpenRouter](https://openrouter.ai) or the OpenAI API, and emits structured JSON
+(`thought_process`, alternatives, `hypothesis`, `code_pseudocode`,
+`risk_level`). The coding agent (Claude, Codex, OpenCode, or any tool with
+file-edit capabilities) reads the proposal and applies it to the mutable file,
+either launched externally or driven by the loop itself
+(`coder.enabled: true`). The loop runs the experiment, classifies it as
 `keep` / `discard` / `crash`, and advances or resets the git branch.
 
 ![Convergence on the three shipped examples](docs/convergence.png)
@@ -321,6 +324,10 @@ starts — useful with larger models (~17 GB MoE) on a 24 GB GPU.
 All three examples ship a `sample_run/` with a real execution: `AUDIT_LOG.md`
 with the linked Gemma critic reasoning per iteration, `results.tsv`,
 `STATE.md`, and the per-call critic JSONL logs.
+
+[`docs/experiments.md`](docs/experiments.md) documents demonstrations run with
+the package, including a comparison of the loop-driven coder against an external
+agent on the TSP example.
 
 ## Adapting to your problem
 
