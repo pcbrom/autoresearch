@@ -1,6 +1,6 @@
 # autoresearch
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19772195.svg)](https://doi.org/10.5281/zenodo.19772195)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20544957.svg)](https://doi.org/10.5281/zenodo.20544957)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Citation
@@ -9,11 +9,11 @@ If you use this software, please cite it as:
 
 ```bibtex
 @software{brom_autoresearch_2026,
-  title   = {autoresearch: Autonomous Research Loop with a Local LLM Critic (v1.0)},
+  title   = {autoresearch: Autonomous Research Loop with a Local LLM Critic (v1.1)},
   author  = {Brom, Pedro Carvalho},
   year    = {2026},
-  doi     = {10.5281/zenodo.19772195},
-  url     = {https://doi.org/10.5281/zenodo.19772195},
+  doi     = {10.5281/zenodo.20544957},
+  url     = {https://doi.org/10.5281/zenodo.20544957},
   license = {MIT}
 }
 ```
