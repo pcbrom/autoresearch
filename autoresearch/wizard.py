@@ -22,13 +22,20 @@ STEPS = [
     "repo_git",
     "tools_present",
     "problem_yaml",
-    "ollama_model",
+    "critic_endpoint",
     "vram_budget",
     "baseline_smoke",
     "critic_dry_run",
     "cleanup_check",
     "confirm_loop",
 ]
+
+
+def _critic_provider(prob: dict) -> str:
+    """Provider name from gemma_critic (default ollama). 'ollama' is local;
+    anything else is treated as a remote OpenAI-compatible endpoint."""
+    cfg = prob.get("gemma_critic", {}) if isinstance(prob, dict) else {}
+    return str(cfg.get("provider", "ollama")).lower()
 
 
 def _state_path() -> Path:
@@ -87,8 +94,11 @@ def step_repo_git() -> dict:
 
 
 def step_tools_present() -> dict:
-    required = ["git", "python3", "ollama"]
-    optional = ["uv", "nvidia-smi"]
+    provider = _critic_provider(_load_problem_safe())
+    # ollama is only required for the local provider; a remote endpoint
+    # (openrouter, openai, ...) needs nothing but git + python3.
+    required = ["git", "python3"] + (["ollama"] if provider == "ollama" else [])
+    optional = ["uv", "nvidia-smi"] + (["ollama"] if provider != "ollama" else [])
     found, missing = {}, []
     for t in required:
         path = _which(t)
@@ -100,7 +110,7 @@ def step_tools_present() -> dict:
     if missing:
         return {"status": "fail", "missing": missing, "found": found, "optional": opt,
                 "fix": f"install: {' '.join(missing)}"}
-    return {"status": "ok", "found": found, "optional": opt}
+    return {"status": "ok", "provider": provider, "found": found, "optional": opt}
 
 
 def step_problem_yaml() -> dict:
@@ -124,13 +134,21 @@ def step_problem_yaml() -> dict:
             "objective": prob["objective"], "metric": prob["metric_name"]}
 
 
-def step_ollama_model() -> dict:
+def step_critic_endpoint() -> dict:
     prob = _load_problem_safe()
     if "_error" in prob:
         return {"status": "blocked", "reason": "problem_yaml step failed first"}
-    if not prob.get("gemma_critic", {}).get("enabled", False):
+    cfg = prob.get("gemma_critic", {})
+    if not cfg.get("enabled", False):
         return {"status": "skip", "reason": "gemma_critic.enabled=false"}
-    model = prob["gemma_critic"].get("model", "gemma4:e2b")
+    provider = _critic_provider(prob)
+    model = cfg.get("model", "gemma4:e2b")
+    if provider == "ollama":
+        return _check_ollama(model)
+    return _check_remote_endpoint(cfg, provider, model)
+
+
+def _check_ollama(model: str) -> dict:
     if not _which("ollama"):
         return {"status": "fail", "reason": "ollama binary missing"}
     rc, out, _ = _run(["ollama", "list"], timeout=10)
@@ -146,11 +164,50 @@ def step_ollama_model() -> dict:
     if rc2 != 0 or "response" not in (out2 or ""):
         return {"status": "fail", "reason": "ollama server unreachable",
                 "fix": "ollama serve  # in another terminal"}
-    return {"status": "ok", "model": model}
+    return {"status": "ok", "provider": "ollama", "model": model}
+
+
+# Conventional env var per provider when api_key_env is not set (mirrors critic.py).
+_DEFAULT_API_KEY_ENV = {"openrouter": "OPENROUTER_API_KEY", "openai": "OPENAI_API_KEY"}
+
+
+def _check_remote_endpoint(cfg: dict, provider: str, model: str) -> dict:
+    base_url = (cfg.get("ollama_url") or cfg.get("base_url")
+                or {"openrouter": "https://openrouter.ai/api/v1",
+                    "openai": "https://api.openai.com/v1"}.get(provider, ""))
+    if not base_url:
+        return {"status": "fail", "reason": f"no base_url for provider '{provider}'",
+                "fix": "set gemma_critic.base_url in problem.yaml"}
+    env_name = cfg.get("api_key_env") or _DEFAULT_API_KEY_ENV.get(provider)
+    api_key = os.environ.get(env_name) if env_name else None
+    if not api_key:
+        return {"status": "fail", "reason": f"API key not set for provider '{provider}'",
+                "fix": f"export {env_name or '<api_key_env>'}=...  "
+                       "(or set gemma_critic.api_key_env in problem.yaml)"}
+    # Lightweight reachability + auth check: GET <base_url>/models.
+    rc, out, err = _run(
+        ["curl", "-sS", "--max-time", "20", "-o", "/dev/null", "-w", "%{http_code}",
+         "-H", f"Authorization: Bearer {api_key}", f"{base_url.rstrip('/')}/models"],
+        timeout=25,
+    )
+    code = (out or "").strip()
+    if rc != 0:
+        return {"status": "fail", "reason": f"endpoint unreachable: {err.strip() or 'curl failed'}",
+                "base_url": base_url}
+    if code in ("401", "403"):
+        return {"status": "fail", "reason": f"auth rejected (HTTP {code})",
+                "fix": f"check the key in {env_name}", "base_url": base_url}
+    if not code.startswith("2"):
+        return {"status": "fail", "reason": f"unexpected HTTP {code} from /models",
+                "base_url": base_url}
+    return {"status": "ok", "provider": provider, "model": model,
+            "base_url": base_url, "api_key_env": env_name}
 
 
 def step_vram_budget() -> dict:
     prob = _load_problem_safe()
+    if _critic_provider(prob) != "ollama":
+        return {"status": "skip", "reason": "remote critic provider, no local VRAM to budget"}
     if not _which("nvidia-smi"):
         return {"status": "skip", "reason": "nvidia-smi missing (CPU-only is fine)"}
     rc, out, _ = _run(["nvidia-smi", "--query-gpu=memory.free,memory.total",
@@ -239,7 +296,7 @@ STEP_FNS = {
     "repo_git": step_repo_git,
     "tools_present": step_tools_present,
     "problem_yaml": step_problem_yaml,
-    "ollama_model": step_ollama_model,
+    "critic_endpoint": step_critic_endpoint,
     "vram_budget": step_vram_budget,
     "baseline_smoke": step_baseline_smoke,
     "critic_dry_run": step_critic_dry_run,

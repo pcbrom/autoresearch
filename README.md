@@ -246,16 +246,23 @@ gemma_critic:
 ### Swapping the critic
 
 The critic is **OpenAI API-compatible** (`openai` SDK + `base_url` + `api_key`),
-so any backend that speaks that protocol works without code changes — only
-adjust the YAML:
+so any backend that speaks that protocol works without code changes. Set
+`provider` (selects defaults and the reasoning toggle), `model`, `base_url`
+(alias `ollama_url`), and `api_key_env` (the name of the env var holding the
+key; Ollama needs none):
 
-| Backend | `model` | `ollama_url` (rename of `base_url`) | Notes |
-|---------|---------|--------------------------------------|-------|
-| Ollama (default)      | `gemma4:e2b`, `gemma3:12b`, `gemma3:27b`, `qwen2.5:7b`, ... | `http://localhost:11434/v1` | Pull with `ollama pull <model>` |
-| vLLM serve            | `google/gemma-3-27b-it`, etc.                                | `http://localhost:8000/v1`   | `--reasoning-parser gemma3` exposes `message.reasoning` |
-| OpenAI API            | `gpt-4o-mini`, `gpt-5`, ...                                  | `https://api.openai.com/v1`  | Set `OPENAI_API_KEY` env var (override `api_key="ollama"` in `critic.py`) |
-| Anthropic via proxy   | `claude-opus-4-7` (via `litellm` / `openrouter`)             | `http://localhost:<proxy>/v1`| Any OpenAI-compat proxy |
-| Local llama.cpp       | served model name                                            | `http://localhost:8080/v1`   | `llama-server --api-key ...` |
+| Backend | `provider` | `model` | `base_url` | `api_key_env` |
+|---------|------------|---------|------------|---------------|
+| Ollama (default)    | `ollama`     | `gemma4:e2b`, `gemma3:27b`, `qwen2.5:7b`, ... | `http://localhost:11434/v1` (default) | none |
+| OpenRouter          | `openrouter` | `anthropic/claude-3.5-sonnet`, `openai/gpt-4o-mini`, ... | `https://openrouter.ai/api/v1` (default) | `OPENROUTER_API_KEY` (default) |
+| OpenAI API          | `openai`     | `gpt-4o-mini`, `gpt-5`, ...                   | `https://api.openai.com/v1` (default) | `OPENAI_API_KEY` (default) |
+| vLLM serve          | `ollama`     | `google/gemma-3-27b-it`, etc.                 | `http://localhost:8000/v1`  | none (`--reasoning-parser gemma3` exposes `message.reasoning`) |
+| Local llama.cpp     | `ollama`     | served model name                             | `http://localhost:8080/v1`  | none |
+
+For `provider: openrouter`/`openai` the wizard's `critic_endpoint` step does an
+authenticated `GET <base_url>/models` instead of probing a local Ollama server,
+and skips the `vram_budget` step. Export the key before running:
+`export OPENROUTER_API_KEY=sk-or-...`.
 
 For non-OpenAI-compatible backends (raw Anthropic SDK, Vertex, Bedrock), edit
 [`autoresearch/critic.py`](autoresearch/critic.py) — replace the

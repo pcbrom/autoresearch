@@ -31,15 +31,28 @@ results_tsv_columns:
 resource_metric_regex: '^peak_vram_mb:\s+([\d.]+)'
 resource_metric_transform: divide_by_1024   # MB -> GB; or: identity, divide_by_1000
 
-# Critic (Ollama-backed Gemma)
+# Critic (any OpenAI-compatible endpoint; Ollama-backed Gemma by default)
 gemma_critic:
   enabled: true
-  model: gemma3n:e2b                        # or gemma3:27b, etc.
+  provider: ollama                          # ollama (local) | openrouter | openai
+  model: gemma3n:e2b                         # or gemma3:27b, etc.
   when: always                              # always (coexists) | downtime (between runs)
   thinking: true                            # CoT-enriched prompt + best-effort thinking
-  max_vram_gb: 8
+  max_vram_gb: 8                            # ignored for remote providers
   context_last_n: 10                        # tail rows of TSV passed to the critic
-  ollama_url: http://localhost:11434/v1
+  ollama_url: http://localhost:11434/v1     # base_url of the endpoint (alias: base_url)
+  # api_key_env: OLLAMA_API_KEY             # env var holding the key (ollama needs none)
+
+# --- Remote example: OpenRouter -------------------------------------------
+# gemma_critic:
+#   enabled: true
+#   provider: openrouter
+#   model: anthropic/claude-3.5-sonnet      # any OpenRouter model id
+#   when: always
+#   thinking: true
+#   context_last_n: 10
+#   base_url: https://openrouter.ai/api/v1  # default for provider=openrouter
+#   api_key_env: OPENROUTER_API_KEY         # export it before running the loop
 
 # State snapshot
 state:

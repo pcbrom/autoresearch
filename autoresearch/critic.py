@@ -49,6 +49,38 @@ THINKING_BLOCK_RE = re.compile(
     flags=re.DOTALL | re.IGNORECASE,
 )
 
+# Any OpenAI-compatible endpoint works; only the base_url + api_key change.
+DEFAULT_BASE_URLS: dict[str, str] = {
+    "ollama": "http://localhost:11434/v1",
+    "openrouter": "https://openrouter.ai/api/v1",
+    "openai": "https://api.openai.com/v1",
+}
+# Env var consulted when api_key_env is not set explicitly.
+DEFAULT_API_KEY_ENV: dict[str, str] = {
+    "openrouter": "OPENROUTER_API_KEY",
+    "openai": "OPENAI_API_KEY",
+}
+
+
+def _resolve_api_key(cfg: dict, provider: str) -> str:
+    """Resolve the API key for the critic endpoint.
+
+    Precedence: explicit api_key_env in problem.yaml, then the provider's
+    conventional env var. Ollama needs no real key (any non-empty string).
+    """
+    env_name = cfg.get("api_key_env") or DEFAULT_API_KEY_ENV.get(provider)
+    if env_name:
+        key = os.environ.get(env_name)
+        if key:
+            return key
+        if provider != "ollama":
+            sys.exit(
+                f"critic provider '{provider}' needs an API key: export {env_name} "
+                f"(or set gemma_critic.api_key_env in problem.yaml)"
+            )
+    # ollama (and any keyless local endpoint) ignores the value.
+    return "ollama"
+
 
 def _tail_tsv(path: Path, n: int) -> list[dict]:
     if not path.exists():
@@ -125,13 +157,13 @@ Reason explicitly about what to try next, then emit the JSON.
     return system, user
 
 
-def _call_ollama(model: str, system: str, user: str, base_url: str,
-                 thinking_on: bool) -> tuple[dict, dict]:
+def _call_critic(model: str, system: str, user: str, base_url: str,
+                 api_key: str, provider: str, thinking_on: bool) -> tuple[dict, dict]:
     try:
         from openai import OpenAI
     except ImportError:
-        sys.exit("openai SDK missing — pip install openai")
-    client = OpenAI(base_url=base_url, api_key="ollama")
+        sys.exit("openai SDK missing: pip install openai")
+    client = OpenAI(base_url=base_url, api_key=api_key)
 
     kwargs: dict[str, Any] = {
         "model": model,
@@ -147,7 +179,13 @@ def _call_ollama(model: str, system: str, user: str, base_url: str,
         "temperature": 0.7,
     }
     if thinking_on:
-        kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": True}}
+        # Reasoning toggles are provider-specific: Ollama/vLLM read a chat-template
+        # kwarg, OpenRouter normalizes a top-level `reasoning` block. Either way the
+        # raw text is captured below via msg.reasoning / THINKING_BLOCK_RE.
+        if provider == "ollama":
+            kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": True}}
+        elif provider == "openrouter":
+            kwargs["extra_body"] = {"reasoning": {"enabled": True}}
 
     resp = client.chat.completions.create(**kwargs)
     msg = resp.choices[0].message
@@ -221,7 +259,10 @@ def run(args: argparse.Namespace) -> None:
         sys.exit("gemma_critic.enabled=false in problem.yaml")
     model = cfg.get("model", "gemma4:e2b")
     when = cfg.get("when", "always")
-    base_url = cfg.get("ollama_url", "http://localhost:11434/v1")
+    provider = str(cfg.get("provider", "ollama")).lower()
+    base_url = (cfg.get("ollama_url") or cfg.get("base_url")
+                or DEFAULT_BASE_URLS.get(provider, DEFAULT_BASE_URLS["ollama"]))
+    api_key = _resolve_api_key(cfg, provider)
     n_history = int(cfg.get("context_last_n", 10))
     thinking_on = bool(cfg.get("thinking", True))
 
@@ -232,17 +273,17 @@ def run(args: argparse.Namespace) -> None:
     commit_short = _current_commit(project)
 
     try:
-        idea, raw = _call_ollama(model, system, user, base_url, thinking_on)
+        idea, raw = _call_critic(model, system, user, base_url, api_key, provider, thinking_on)
     except Exception as e:
         _audit(project, {}, {"error": str(e)}, system, user, commit_short)
         print(json.dumps({"error": str(e), "fallback": "skip iteration"}))
-        if when == "downtime":
+        if when == "downtime" and provider == "ollama":
             _stop_ollama(model)
         gc_all()
         sys.exit(1)
 
     audit_path = _audit(project, idea, raw, system, user, commit_short)
-    if when == "downtime":
+    if when == "downtime" and provider == "ollama":
         _stop_ollama(model)
     gc_all()
 
