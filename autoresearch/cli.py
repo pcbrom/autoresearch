@@ -35,6 +35,11 @@ def main(argv: list[str] | None = None) -> None:
     sp.add_argument("--problem", default=None)
     sp.add_argument("--dry-run", action="store_true")
 
+    # coder
+    sp = sub.add_parser("coder", help="apply next_idea.json via a coding agent")
+    sp.add_argument("--problem", default=None)
+    sp.add_argument("--dry-run", action="store_true")
+
     # loop
     sp = sub.add_parser("loop", help="run the NEVER-STOP autonomous loop")
     sp.add_argument("--problem", default=None)
@@ -70,6 +75,8 @@ def main(argv: list[str] | None = None) -> None:
         from . import runner; runner.run(args)
     elif args.cmd == "critic":
         from . import critic; critic.run(args)
+    elif args.cmd == "coder":
+        from . import coder; coder.run(args)
     elif args.cmd == "loop":
         from . import loop; loop.run(args)
     elif args.cmd == "analyze":

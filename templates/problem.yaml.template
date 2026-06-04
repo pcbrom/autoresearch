@@ -54,6 +54,20 @@ gemma_critic:
 #   base_url: https://openrouter.ai/api/v1  # default for provider=openrouter
 #   api_key_env: OPENROUTER_API_KEY         # export it before running the loop
 
+# Coder (applies next_idea.json to mutable_file each iteration)
+# enabled=false (default): the loop pauses at the noop state and waits for an
+# external/human agent to edit mutable_file. enabled=true: the loop invokes the
+# agent below headless and advances on its own. The loop still runs the
+# experiment and owns all git; the agent only edits mutable_file.
+coder:
+  enabled: false
+  agent: claude                 # claude | codex | opencode (preset commands)
+  permission: acceptEdits       # acceptEdits (edits only) | bypass (full autonomy)
+  timeout_s: 300                # per-invocation hard timeout
+  # command: null               # override the preset; {prompt} is substituted
+  # prompt_template: null       # override the instruction; {mutable_file},
+                                #   {readonly_files} are substituted
+
 # State snapshot
 state:
   enabled: true

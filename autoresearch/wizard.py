@@ -38,6 +38,20 @@ def _critic_provider(prob: dict) -> str:
     return str(cfg.get("provider", "ollama")).lower()
 
 
+def _coder_binary(prob: dict) -> str | None:
+    """Binary the loop must launch to drive the coder, or None when the loop
+    waits for an external/human agent (coder.enabled=false)."""
+    cfg = prob.get("coder", {}) if isinstance(prob, dict) else {}
+    if not cfg.get("enabled", False):
+        return None
+    cmd = cfg.get("command")
+    if cmd:
+        import shlex
+        parts = shlex.split(cmd) if isinstance(cmd, str) else list(cmd)
+        return parts[0] if parts else None
+    return str(cfg.get("agent", "claude")).lower()
+
+
 def _state_path() -> Path:
     return project_root() / STATE_DIRNAME / STATE_FILENAME
 
@@ -94,11 +108,16 @@ def step_repo_git() -> dict:
 
 
 def step_tools_present() -> dict:
-    provider = _critic_provider(_load_problem_safe())
+    prob = _load_problem_safe()
+    provider = _critic_provider(prob)
     # ollama is only required for the local provider; a remote endpoint
     # (openrouter, openai, ...) needs nothing but git + python3.
     required = ["git", "python3"] + (["ollama"] if provider == "ollama" else [])
     optional = ["uv", "nvidia-smi"] + (["ollama"] if provider != "ollama" else [])
+    # When a coder drives the loop, its agent binary must be on PATH.
+    coder_bin = _coder_binary(prob)
+    if coder_bin:
+        required.append(coder_bin)
     found, missing = {}, []
     for t in required:
         path = _which(t)
@@ -110,7 +129,8 @@ def step_tools_present() -> dict:
     if missing:
         return {"status": "fail", "missing": missing, "found": found, "optional": opt,
                 "fix": f"install: {' '.join(missing)}"}
-    return {"status": "ok", "provider": provider, "found": found, "optional": opt}
+    return {"status": "ok", "provider": provider, "coder": coder_bin or "external/manual",
+            "found": found, "optional": opt}
 
 
 def step_problem_yaml() -> dict:

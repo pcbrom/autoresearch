@@ -54,10 +54,34 @@ def run(args: argparse.Namespace) -> None:
 
     gemma_enabled = bool(get_dotted(problem, "gemma_critic.enabled", False))
     gemma_model = get_dotted(problem, "gemma_critic.model", "gemma4:e2b")
+    coder_enabled = bool(get_dotted(problem, "coder.enabled", False))
     state_enabled = bool(get_dotted(problem, "state.enabled", False))
     state_every = int(get_dotted(problem, "state.rebuild_every_n_iter", 5))
     metric = problem["metric_name"]
     lower = bool(problem.get("lower_is_better", True))
+    mutable_file = problem["mutable_file"]
+
+    def drive_coder() -> bool:
+        """Invoke the configured coder to apply next_idea.json. Returns True if an
+        edit landed. On any failure it prints the recovery options and returns
+        False so the caller can fall back to passive waiting."""
+        if not (project / "next_idea.json").exists():
+            return False
+        from . import coder as _coder
+        res = _coder.apply_next_idea(problem, project)
+        if res.get("status") == "ok":
+            print(f"[loop] coder ({res.get('agent') or 'custom'}) applied next_idea -> {mutable_file}",
+                  file=sys.stderr)
+            return True
+        print(f"[loop] coder did not apply an edit: {res.get('reason', res.get('status'))}",
+              file=sys.stderr)
+        if res.get("stderr"):
+            print(f"[loop] coder stderr: {res['stderr']}", file=sys.stderr)
+        print(f"[loop] how to proceed: (a) edit {mutable_file} by hand to advance; "
+              "(b) Ctrl-C to stop and fix the coder config in problem.yaml; "
+              "(c) do nothing, the loop will retry the coder next iteration.",
+              file=sys.stderr)
+        return False
 
     def shutdown(signum, frame):
         print(f"\n[{time.strftime('%H:%M:%S')}] received signal, shutting down...", file=sys.stderr)
@@ -90,13 +114,18 @@ def run(args: argparse.Namespace) -> None:
             last_status = rows[-1].get("status", "?") if rows else "?"
             if last_status == "noop":
                 noop_streak += 1
-                if gemma_enabled and noop_streak <= 1:
+                # Refresh the proposal on the first noop, or every noop when a
+                # coder is driving (so each retry has a fresh idea to apply).
+                if gemma_enabled and (coder_enabled or noop_streak <= 1):
                     from . import critic as _critic
                     cns = _A(); cns.problem = str(pp); cns.dry_run = False
                     try:
                         _critic.run(cns)
                     except SystemExit:
                         pass
+                # With a coder, apply the idea now and advance without waiting.
+                if coder_enabled and drive_coder():
+                    continue
                 sleep_s = 5 if noop_streak < 5 else 30
                 print(f"[loop] noop (streak={noop_streak}), sleeping {sleep_s}s for agent to edit",
                       file=sys.stderr)
@@ -114,6 +143,10 @@ def run(args: argparse.Namespace) -> None:
                     _critic.run(cns)
                 except SystemExit as e:
                     print(f"[warn] critic failed this iter: {e}", file=sys.stderr)
+
+            # Apply the freshly proposed idea so the next iteration evaluates it.
+            if coder_enabled:
+                drive_coder()
 
             current_best = running_best(read_tsv(project / "results.tsv"), metric, lower)
             should_rebuild = False

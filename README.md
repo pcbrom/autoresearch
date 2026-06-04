@@ -111,8 +111,40 @@ Three things the coding agent does per iteration:
 2. `autoresearch critic` (writes `next_idea.json`)
 3. Read `next_idea.json` and edit `solution.py`
 
-`autoresearch loop` automates steps 1 and 2 and pauses at the `noop` state
-until a new edit has been applied. The agent only needs to handle step 3.
+`autoresearch loop` automates steps 1 and 2. Step 3 runs one of two ways:
+
+- **External agent (default, `coder.enabled: false`):** the loop pauses at the
+  `noop` state until a new edit has been applied. You launch a coding agent
+  (examples below) and instruct it to apply each `next_idea.json` to
+  `solution.py`.
+- **Loop-driven coder (`coder.enabled: true`):** the loop invokes the configured
+  agent headless every iteration and advances on its own, with no human in the
+  seat. Configure it in `problem.yaml`:
+
+  ```yaml
+  coder:
+    enabled: true
+    agent: claude              # claude | codex | opencode
+    permission: acceptEdits    # acceptEdits (edits only) | bypass (full autonomy)
+    timeout_s: 300
+    # command: "my-agent --flags '{prompt}'"   # override the preset
+    # prompt_template: "..."                    # override the instruction
+  ```
+
+  Preset commands (`{prompt}` is the auto-generated instruction):
+
+  | `agent` | `acceptEdits` | `bypass` |
+  |---------|---------------|----------|
+  | `claude`   | `claude -p --permission-mode acceptEdits {prompt}` | `claude -p --dangerously-skip-permissions {prompt}` |
+  | `codex`    | `codex exec --sandbox workspace-write {prompt}`    | `codex exec --dangerously-bypass-approvals-and-sandbox {prompt}` |
+  | `opencode` | `opencode run {prompt}`                            | `opencode run {prompt}` |
+
+  The loop still runs the experiment and owns all git; the coder only edits
+  `mutable_file` and never commits. Test the invocation without running the loop
+  with `autoresearch coder --dry-run` (prints the command) or `autoresearch
+  coder` (applies `next_idea.json` once). If the coder fails (timeout, error, or
+  no edit), the loop logs the failure with recovery options and falls back to
+  passive `noop` waiting so a human can intervene.
 
 ### Claude Code
 
@@ -167,10 +199,13 @@ Each iteration:
    (`thought_process`, `alternatives_considered`) so reasoning is captured
    even when Ollama does not expose native thinking.
 3. The agent harness reads `next_idea.json`, applies the change to
-   `solution.py` (file edit), and the next iteration begins.
+   `solution.py` (file edit), and the next iteration begins. This is either an
+   external/human-launched agent or, when `coder.enabled: true`, an agent the
+   loop invokes itself (see [Driving the loop](#driving-the-loop-with-ai-coding-agents)).
 
-`autoresearch loop` wires steps 1 and 2 together and waits 5–30s when no edit
-has been made since the last commit (the `noop` state).
+`autoresearch loop` wires steps 1 and 2 together. For step 3 it either drives
+the configured coder, or waits 5-30s when no edit has been made since the last
+commit (the `noop` state).
 
 ## Wizard
 
@@ -179,10 +214,10 @@ has been made since the last commit (the `noop` state).
 | # | Step | What it checks |
 |---|------|----------------|
 | 1 | `repo_git` | target is a git repo |
-| 2 | `tools_present` | git, python3, ollama in PATH |
+| 2 | `tools_present` | git, python3 (+ ollama for the local provider, + the coder agent binary when `coder.enabled`) in PATH |
 | 3 | `problem_yaml` | schema valid + paths resolve |
-| 4 | `ollama_model` | configured model is pulled and Ollama responds |
-| 5 | `vram_budget` | enough free VRAM (NVIDIA only; soft check) |
+| 4 | `critic_endpoint` | local provider: model pulled and Ollama responds; remote provider: authenticated `GET <base_url>/models` |
+| 5 | `vram_budget` | enough free VRAM (NVIDIA only; skipped for remote providers) |
 | 6 | `baseline_smoke` | runner executes once, regex matches, within timeout |
 | 7 | `critic_dry_run` | Gemma returns valid JSON Schema |
 | 8 | `cleanup_check` | no zombie ollama processes, log rotation in place |
